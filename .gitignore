@@ -1,0 +1,9 @@
+.idea/
+CMakeFiles/
+*.cmake
+*.hex
+*.out
+
+Makefile
+CMakeCache.txt
+*.cbp
