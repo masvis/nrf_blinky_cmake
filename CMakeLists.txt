@@ -1,5 +1,5 @@
-set(NRF_SDK_ROOT /home/ruggero-russo/Nordic/sdk)
-set(NRFJPROG_PATH /home/ruggero-russo/Nordic/cli/nrfjprog)
+set(NRF_SDK_ROOT $ENV{HOME}/Nordic/sdk)
+set(NRFJPROG_PATH $ENV{HOME}/Nordic/cli/nrfjprog)
 
 cmake_minimum_required(VERSION 3.6)
 project(blinky_pca10040_s132 C ASM)
@@ -78,7 +78,7 @@ set(ASMFLAGS "-g3 \
 -DNRF52_PAN_74")
 
 set(LDFLAGS "-O3 -g3 \
--mthumb -mabi=aapcs -L ${TEMPLATE_PATH} -Tblinky_gcc_nrf52.ld \
+-mthumb -mabi=aapcs -L ${TEMPLATE_PATH} -Tblinky_gcc_nrf52_blank.ld \
 -mcpu=cortex-m4 \
 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 -Wl,--gc-sections \
