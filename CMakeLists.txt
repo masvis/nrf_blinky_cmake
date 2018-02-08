@@ -95,37 +95,27 @@ set(CMAKE_C_FLAGS ${CFLAGS})
 set(CMAKE_ASM_FLAGS ${ASMFLAGS})
 set(CMAKE_EXE_LINKER_FLAGS ${LDFLAGS})
 
-add_executable(nrf52832_xxaa ${SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 set_target_properties(
-        nrf52832_xxaa
+        ${PROJECT_NAME}
         PROPERTIES
-        OUTPUT_NAME "nrf52832_xxaa"
+        OUTPUT_NAME "${PROJECT_NAME}"
         SUFFIX ".out"
 )
 
 add_custom_target(size
-        DEPENDS nrf52832_xxaa
-        COMMAND ${SIZE} nrf52832_xxaa.out
+        DEPENDS ${PROJECT_NAME}
+        COMMAND ${SIZE} ${PROJECT_NAME}.out
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(createhex
-        DEPENDS size nrf52832_xxaa
-        COMMAND ${OBJCOPY} -O ihex nrf52832_xxaa.out nrf52832_xxaa.hex
+        DEPENDS size ${PROJECT_NAME}
+        COMMAND ${OBJCOPY} -O ihex ${PROJECT_NAME}.out ${PROJECT_NAME}.hex
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(flash
-        DEPENDS createhex size nrf52832_xxaa
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --program nrf52832_xxaa.hex -f nrf52 --sectorerase
+        DEPENDS createhex size ${PROJECT_NAME}
+        COMMAND ${NRFJPROG_PATH}/nrfjprog --program ${PROJECT_NAME}.hex -f nrf52 --sectorerase
         COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
-add_custom_target(flash_softdevice_nrf52_132_2
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --program support/s132_nrf52_2.0.1_softdevice.hex -f nrf52 --sectorerase
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-add_custom_target(flash_softdevice_nrf52_132_3
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --program support/s132_nrf52_3.0.0_softdevice.hex -f nrf52 --sectorerase
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
