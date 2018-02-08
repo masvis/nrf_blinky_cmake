@@ -1,7 +1,9 @@
+cmake_minimum_required(VERSION 3.6)
+
 set(NRF_SDK_ROOT $ENV{HOME}/Nordic/sdk)
 set(NRFJPROG_PATH $ENV{HOME}/Nordic/cli/nrfjprog)
+set(SOFTDEVICE ON)
 
-cmake_minimum_required(VERSION 3.6)
 project(blinky_pca10040_s132 C ASM)
 
 include(CMakeForceCompiler)
@@ -42,7 +44,6 @@ set(INC_FOLDERS
         ${NRF_SDK_ROOT}/components/libraries/experimental_log/src
         ${NRF_SDK_ROOT}/components/toolchain/gcc
         ${NRF_SDK_ROOT}/components/libraries/bsp
-        ${NRF_SDK_ROOT}/components/drivers_nrf/nrf_soc_nosd
         ${NRF_SDK_ROOT}/components/device
         ${NRF_SDK_ROOT}/components/boards
         ${NRF_SDK_ROOT}/components/drivers_nrf/delay
@@ -77,8 +78,45 @@ set(ASMFLAGS "-g3 \
 -DNRF52832_XXAA \
 -DNRF52_PAN_74")
 
+set(FLASH_COMMANDS
+        COMMAND ${NRFJPROG_PATH}/nrfjprog -f nrf52 --eraseall
+        COMMAND ${NRFJPROG_PATH}/nrfjprog --program ${PROJECT_NAME}.hex -f nrf52 --sectorerase
+        COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52)
+
+if (SOFTDEVICE STREQUAL "ON")
+    message("Building with softdevice")
+    set(LINKER_SCRIPT blinky_gcc_nrf52_pca10040_s132.ld)
+    set(SRC_FILES ${SRC_FILES}
+            ${NRF_SDK_ROOT}/components/libraries/experimental_section_vars/nrf_section_iter.c
+            ${NRF_SDK_ROOT}/components/softdevice/common/nrf_sdh.c
+            ${NRF_SDK_ROOT}/components/softdevice/common/nrf_sdh_soc.c)
+
+    set(INC_FOLDERS ${INC_FOLDERS}
+            ${NRF_SDK_ROOT}/components/softdevice/s132/headers
+            ${NRF_SDK_ROOT}/components/toolchain/cmsis/include
+            ${NRF_SDK_ROOT}/components/softdevice/common
+            ${NRF_SDK_ROOT}/components/softdevice/s132/headers/nrf52)
+    set(CFLAGS "${CFLAGS} \
+-DNRF_SD_BLE_API_VERSION=5 \
+-DS132 \
+-DSOFTDEVICE_PRESENT")
+    set(ASMFLAGS "${ASMFLAGS} \
+-DNRF_SD_BLE_API_VERSION=5 \
+-DS132 \
+-DSOFTDEVICE_PRESENT")
+    set(FLASH_COMMANDS
+            ${FLASH_COMMANDS}
+            COMMAND ${NRFJPROG_PATH}/nrfjprog --program ${NRF_SDK_ROOT}/components/softdevice/s132/hex/s132_nrf52_5.0.0_softdevice.hex -f nrf52 --sectorerase
+            COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52)
+else ()
+    message("Building without softdevice")
+    set(LINKER_SCRIPT blinky_gcc_nrf52_blank.ld)
+    set(INC_FOLDERS ${INC_FOLDERS}
+            ${NRF_SDK_ROOT}/components/drivers_nrf/nrf_soc_nosd)
+endif ()
+
 set(LDFLAGS "-O3 -g3 \
--mthumb -mabi=aapcs -L ${TEMPLATE_PATH} -Tblinky_gcc_nrf52_blank.ld \
+-mthumb -mabi=aapcs -L ${TEMPLATE_PATH} -T${LINKER_SCRIPT} \
 -mcpu=cortex-m4 \
 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 -Wl,--gc-sections \
@@ -116,6 +154,5 @@ add_custom_target(createhex
 
 add_custom_target(flash
         DEPENDS createhex size ${PROJECT_NAME}
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --program ${PROJECT_NAME}.hex -f nrf52 --sectorerase
-        COMMAND ${NRFJPROG_PATH}/nrfjprog --reset -f nrf52
+        ${FLASH_COMMANDS}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
